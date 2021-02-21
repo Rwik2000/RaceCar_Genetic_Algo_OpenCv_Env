@@ -95,8 +95,10 @@ if __name__ == "__main__":
         nextAgents = []
 
         startTime = time.time()
-        thresh_time = 60
+        thresh_time = 90
         # for timestep in range(configs.deathThreshold):
+        init_vel = np.random.uniform(0, 40)
+        init_yaw = np.random.uniform(-70,70)
         while time.time() - startTime <= thresh_time:
             input_scr = trk01_scr.copy()
             for agentIndex in range(len(currentAgents)):
@@ -108,12 +110,21 @@ if __name__ == "__main__":
                     ENV.vehicles[agentIndex].track = input_scr
                     if cflag == 0:
                         ENV.vehicles[agentIndex].loc = spawn_loc.copy()
+                        ENV.vehicles[agentIndex].vel = init_vel
+                        ENV.vehicles[agentIndex].yaw = -np.deg2rad(init_yaw)
+
                     
                     throttle = action[agentIndex][0]
                     steer = action[agentIndex][1]
-                    vis_pts,_ ,dead[agentIndex], reward = ENV.vehicles[agentIndex].move(throttle,steer)
+                    vis_pts,_ ,dead[agentIndex], reward = ENV.vehicles[agentIndex].move(1,steer)
                     rewards[agentIndex] += reward
+
                     state[agentIndex] = vis_pts
+                    if rewards[agentIndex] < -5:
+                        print("Dead due to lack of rewards")
+                        ENV.vehicles[agentIndex].done = -1
+                        dead[agentIndex] == -1
+                        rewards[agentIndex] -= 10
             # print(rewards)
             if 0 not in dead:
                 break
@@ -127,8 +138,6 @@ if __name__ == "__main__":
             if generationIndex%1 == 0:
                 ENV.render()
             cflag+=1
-            # break
-            # print(rewards)
         avgScore = np.mean(rewards)
         # experiment.log_metric("fitness", np.mean(avgScore) , step= generationIndex)
 

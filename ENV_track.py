@@ -11,7 +11,7 @@ class Track():
         self.dist_to_px = dist_to_px
         self.trk_width_px = trk_width*self.dist_to_px
 
-        self.turns = [0] #random turns
+        self.turns = [0,1,2] #random turns
 
         # Car params
         self.car_front_clearance = 5*self.dist_to_px #5 stands for meter, self.dist_to_px is conversion to pixel space

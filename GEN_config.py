@@ -55,8 +55,8 @@ class Args():
         self.maxBraking = 0.05
 
         # Settings
-        self.nSurvivors = 20
-        self.num_vehicles = 50
+        self.nSurvivors = 10
+        self.num_vehicles = 100
         if self.test:
             self.num_vehicles = 1
             self.nSurvivors = self.num_vehicles

@@ -2,7 +2,7 @@
 import numpy as np
 import matplotlib.pyplot as plt
 class Vehicle():
-    def __init__(self, mass = 1000, mu = 0.5, vel = 1,acc = 0,max_acc = 10 ,max_vel = 20,
+    def __init__(self, mass = 1000, mu = 0.5, vel = 1,acc = 0,max_acc = 10 ,max_vel = 40,
                 g=9.8, loc = [0.0,0.0], dist_to_px = 20, track=None, speed_X=1):
         # scaling 
         self.dist_to_px = dist_to_px
@@ -125,7 +125,7 @@ class Vehicle():
         self.get_vision_points()
         self.done =  0
         try:
-            if(self.loc[1] <= 0 ):
+            if(self.loc[1] <= 50 ):
                 self.done = 1
             elif (self.track[int(self.loc[1])][int(self.loc[0])] == np.array([0,0,0])).all():
                 self.reset()
@@ -141,13 +141,14 @@ class Vehicle():
     def get_reward(self):
         self.reward = 0
         if self.done == 1:
-            self.reward += 100
+            self.reward += 10
         else:
             if self.done == -1:
-                self.reward -= 100
+                self.reward -= 10
             # print("yo")
-            self.reward -= 10
-            self.reward -= (self.loc[1] - self.prev_loc[1])*1.3
+            self.reward -= 0.05
+            self.reward -= (self.loc[1] - self.prev_loc[1])*3
+
         # print(self.reward)
         return round(self.reward,2)
         
