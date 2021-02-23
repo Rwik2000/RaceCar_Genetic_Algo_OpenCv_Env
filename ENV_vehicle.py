@@ -146,7 +146,7 @@ class Vehicle():
             if self.done == -1:
                 self.reward -= 10
             # print("yo")
-            self.reward -= 0.05
+            self.reward -= 0.02
             self.reward -= (self.loc[1] - self.prev_loc[1])*3
 
         # print(self.reward)

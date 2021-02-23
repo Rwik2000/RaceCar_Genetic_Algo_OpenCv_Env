@@ -7,9 +7,9 @@ class Args():
 
     def __init__(self):
         # Logistical Parameters
-        self.checkpoint = 0
-        trial = 6
-        self.test = False
+        self.checkpoint = 14
+        trial = 1
+        self.test = True
         
         # evolution parameters
         

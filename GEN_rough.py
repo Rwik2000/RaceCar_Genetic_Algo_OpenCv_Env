@@ -98,7 +98,8 @@ if __name__ == "__main__":
         thresh_time = 90
         # for timestep in range(configs.deathThreshold):
         init_vel = np.random.uniform(0, 40)
-        init_yaw = np.random.uniform(-70,70)
+        # init_yaw = np.random.uniform(-70,70)
+        print(len(currentAgents))
         while time.time() - startTime <= thresh_time:
             input_scr = trk01_scr.copy()
             for agentIndex in range(len(currentAgents)):
@@ -111,30 +112,26 @@ if __name__ == "__main__":
                     if cflag == 0:
                         ENV.vehicles[agentIndex].loc = spawn_loc.copy()
                         ENV.vehicles[agentIndex].vel = init_vel
-                        ENV.vehicles[agentIndex].yaw = -np.deg2rad(init_yaw)
+                        # ENV.vehicles[agentIndex].yaw = -np.deg2rad(init_yaw)
 
-                    
+                    action[agentIndex][0] = np.clip(action[agentIndex][0], 0.5, 1)
                     throttle = action[agentIndex][0]
                     steer = action[agentIndex][1]
-                    vis_pts,_ ,dead[agentIndex], reward = ENV.vehicles[agentIndex].move(1,steer)
+                    vis_pts,_ ,dead[agentIndex], reward = ENV.vehicles[agentIndex].move(throttle,steer)
                     rewards[agentIndex] += reward
 
                     state[agentIndex] = vis_pts
                     if rewards[agentIndex] < -5:
                         print("Dead due to lack of rewards")
+                        ENV.vehicles[agentIndex].reset()
                         ENV.vehicles[agentIndex].done = -1
-                        dead[agentIndex] == -1
+                        dead[agentIndex] = -1
                         rewards[agentIndex] -= 10
-            # print(rewards)
+                    print(dead)
             if 0 not in dead:
+                print("yo")
                 break
-            #     break
-            # break
-
-                    # print(throttle, steer)
-            # print(action)
-            if 0.0 not in dead:
-                break
+            # print("hey")
             if generationIndex%1 == 0:
                 ENV.render()
             cflag+=1
@@ -153,8 +150,8 @@ if __name__ == "__main__":
             currentAgents = mutateWeightsAndBiases(nextAgents, configs)
             if (generationIndex + 1) % 5 == 0:
                 saveWeightsAndBiases(nextAgents, generationIndex, configs)
-        else:
-            env.saveImage()
+        # else:
+        #     env.saveImage()
 
         
             
