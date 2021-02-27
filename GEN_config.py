@@ -7,8 +7,8 @@ class Args():
 
     def __init__(self):
         # Logistical Parameters
-        self.checkpoint = 14
-        trial = 1
+        self.checkpoint = 74
+        trial = 6
         self.test = True
         
         # evolution parameters
@@ -55,7 +55,7 @@ class Args():
         self.maxBraking = 0.05
 
         # Settings
-        self.nSurvivors = 10
+        self.nSurvivors = 5
         self.num_vehicles = 100
         if self.test:
             self.num_vehicles = 1
@@ -75,6 +75,9 @@ class Args():
         f = open(saveloc + 'params.json','w')
         f.write(str(self.getParamsDict()))
         f.close()
+
+        self.addToVAEdata = 1
+        self.VAE_csvloc = 'VAE_dataset/VAE_points.csv'
 
     def getParamsDict(self):
         ret = {key:value for key, value in self.__dict__.items() if not key.startswith('__') and not callable(key)}

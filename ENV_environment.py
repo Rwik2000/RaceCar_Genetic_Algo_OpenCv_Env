@@ -10,6 +10,7 @@ class env():
         self.dist_to_px = dist_to_px
         self.print_info = 0
         self.vehicles = []
+        self._obstaclesON = 0
         self.num_vehicles = 1
 
     def gen_vehicles(self, vel = 0, acc = 0, yaw = 0):
@@ -24,6 +25,7 @@ class env():
     def gen_track(self):
         self.trk = Track(self.dist_to_px)
         self.trk.dist_to_px = self.dist_to_px
+        self.trk.obstaclesON = self._obstaclesON
         return self.trk
 
     def drawCar(self, x0, y0, width, height, angle, img, status):

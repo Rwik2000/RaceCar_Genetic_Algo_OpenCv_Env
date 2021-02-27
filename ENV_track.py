@@ -1,6 +1,9 @@
+from sys import setprofile
+from time import sleep
 import numpy as np
 import cv2
 import random
+from numpy.lib.function_base import select
 from scipy.linalg import pascal
 class Track():
     def __init__(self, dist_to_px,scr_width = 800, scr_height = 600, trk_width = 10):
@@ -11,8 +14,9 @@ class Track():
         self.dist_to_px = dist_to_px
         self.trk_width_px = trk_width*self.dist_to_px
 
-        self.turns = [0,1,2] #random turns
-
+        self.turns = [0,1] #random turns
+        self._turns = 0
+        self.obstaclesON = 0
         # Car params
         self.car_front_clearance = 5*self.dist_to_px #5 stands for meter, self.dist_to_px is conversion to pixel space
     
@@ -25,12 +29,13 @@ class Track():
         right_top_pt = np.array([left_top_pt[0]+self.trk_width_px, 0])
 
         turns = random.choice(self.turns)
+        self._turns = turns
         left_pts = [left_bot_pt]
         right_pts = [right_bot_pt]
         for i in range(turns):
-            left_mid_pt = np.array([np.random.randint(0, self.scr_width - self.trk_width_px), (left_top_pt[1]*(i+1)+left_bot_pt[1])//turns])
+            left_mid_pt = np.array([np.random.randint(0, self.scr_width - self.trk_width_px), (left_top_pt[1]*(i+1)+left_bot_pt[1])//turns - 100])
             left_pts.append(left_mid_pt)
-            right_mid_pt = np.array([left_mid_pt[0]+self.trk_width_px, (left_top_pt[1]*(i+1)+left_bot_pt[1])//turns])
+            right_mid_pt = np.array([left_mid_pt[0]+self.trk_width_px, (left_top_pt[1]*(i+1)+left_bot_pt[1])//turns - 100])
             right_pts.append(right_mid_pt)
         left_pts.append(left_top_pt)
         right_pts.append(right_top_pt)
@@ -78,9 +83,30 @@ class Track():
         val = 5
         cv2.floodFill(self.screen, None, seedPoint=temp, newVal=(255, 255, 255), loDiff=(val, val, val, val), upDiff=(val, val, val, val))
 
+        if self.obstaclesON:
+            self._add_obstacles()
         # Random spawn location of the car
         spawn_loc = [np.random.randint(left_boundary_pts[0][0],right_boundary_pts[0][0]), left_boundary_pts[0][1]-5]
         return self.screen, spawn_loc
 
+    
+    def _add_obstacles(self):
+        obsRadius = 8
+        circleOffset = 200
+        centreOffset = 100
+        vert_offset = random.choice([0,50])
+        centre = [obsRadius, obsRadius + vert_offset]
+
+        count = 0
+        while centre[1] <= self.scr_height:
+            while centre[0] <= self.scr_width:
+                self.screen = cv2.circle(self.screen, tuple(centre), obsRadius, (0,0,0), 20)
+                centre[0] = centre[0] + circleOffset
+            
+            centre[1] = centre[1] + circleOffset
+            centre[0] = obsRadius
+            if count%2 != 0:
+                centre[0]+= centreOffset
+            
 
 

@@ -1,4 +1,5 @@
 # Bicycle model implementation
+from os import SEEK_CUR
 import numpy as np
 import matplotlib.pyplot as plt
 class Vehicle():
@@ -118,6 +119,7 @@ class Vehicle():
         if abs(self.yaw)>np.pi*2:
             self.yaw -= np.pi*2
         self.prev_loc = self.loc
+        self.prev_yaw = self.yaw
         self.loc[1] -= vel_y*self.dt*self.dist_to_px 
         self.loc[0] += vel_x*self.dt*self.dist_to_px
 
@@ -141,13 +143,14 @@ class Vehicle():
     def get_reward(self):
         self.reward = 0
         if self.done == 1:
-            self.reward += 10
+            self.reward += 20
         else:
             if self.done == -1:
-                self.reward -= 10
+                self.reward -=10
             # print("yo")
-            self.reward -= 0.02
-            self.reward -= (self.loc[1] - self.prev_loc[1])*3
+            self.reward -= 0.1
+            self.reward -= (self.loc[1] - self.prev_loc[1])*30
+            self.reward -= abs(self.yaw - self.prev_yaw)*10
 
         # print(self.reward)
         return round(self.reward,2)

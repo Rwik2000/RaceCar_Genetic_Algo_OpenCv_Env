@@ -1,7 +1,9 @@
 # from comet_ml import Experiment
 # from ENV_sample_run import Cars
 from time import sleep
+import cv2
 import numpy as np
+from numpy.lib.function_base import select
 from GEN_agentFile import Agent
 # from GEN_environment import Car, Environment
 from ENV_environment import env
@@ -10,6 +12,7 @@ from GEN_config import Args, configure
 import torch
 import os
 import time
+from csv import writer
 configs, use_cuda,  device = configure()
 
 ## SET LOGGING
@@ -52,8 +55,11 @@ def saveWeightsAndBiases(agentDicts, generation, configs:Args):
 if __name__ == "__main__":
     print('-------------BEGINNING EXPERIMENT--------------')
     
-    
-    
+    currImageNumber = 1
+    if configs.addToVAEdata:
+        while os.path.exists("VAE_dataset/images/VAE_img_%s.jpg" % currImageNumber):
+            currImageNumber += 1
+        print(currImageNumber)
     currentAgents = []
     if configs.checkpoint != 0:
         for spawnIndex in range(configs.nSurvivors):
@@ -68,6 +74,7 @@ if __name__ == "__main__":
             currentAgents.append(agent)
     ENV = env(speed_X=70)
     ENV.num_vehicles = configs.num_vehicles
+    ENV._obstaclesON = 0
     # print()
     # print(ENV.num_vehicles)
     # print(len(currentAgents))
@@ -79,12 +86,15 @@ if __name__ == "__main__":
     state = np.ones((configs.num_vehicles, configs.num_vis_pts))*configs.max_vis
     dead = np.zeros((configs.num_vehicles, ))
     rewards = np.zeros((configs.num_vehicles, ))
-
-        
-    for generationIndex in range(0, 100):
+    success = 0
+    failure = 0
+    
+    for generationIndex in range(configs.checkpoint, configs.checkpoint + 1000):
+        VAEdataloc = []
         trk01 = ENV.gen_track()
         Cars = ENV.gen_vehicles()
         trk01_scr, spawn_loc = trk01.gen_track()
+        print("number of turns : ", trk01._turns)
         cflag = 0
 
         action = np.zeros((configs.num_vehicles, 2))
@@ -99,7 +109,6 @@ if __name__ == "__main__":
         # for timestep in range(configs.deathThreshold):
         init_vel = np.random.uniform(0, 40)
         # init_yaw = np.random.uniform(-70,70)
-        print(len(currentAgents))
         while time.time() - startTime <= thresh_time:
             input_scr = trk01_scr.copy()
             for agentIndex in range(len(currentAgents)):
@@ -114,34 +123,56 @@ if __name__ == "__main__":
                         ENV.vehicles[agentIndex].vel = init_vel
                         # ENV.vehicles[agentIndex].yaw = -np.deg2rad(init_yaw)
 
-                    action[agentIndex][0] = np.clip(action[agentIndex][0], 0.5, 1)
                     throttle = action[agentIndex][0]
                     steer = action[agentIndex][1]
-                    vis_pts,_ ,dead[agentIndex], reward = ENV.vehicles[agentIndex].move(throttle,steer)
+                    # print(throttle, steer)
+                    vis_pts, carLoc ,dead[agentIndex], reward = ENV.vehicles[agentIndex].move(throttle,steer)
                     rewards[agentIndex] += reward
 
+                    if configs.addToVAEdata:
+                        VAEdataloc.append(carLoc)
                     state[agentIndex] = vis_pts
-                    if rewards[agentIndex] < -5:
-                        print("Dead due to lack of rewards")
+                    if rewards[agentIndex] < -5 and dead[agentIndex] ==0:
+                        # print("DEAD - Lack of rewards")
                         ENV.vehicles[agentIndex].reset()
                         ENV.vehicles[agentIndex].done = -1
                         dead[agentIndex] = -1
                         rewards[agentIndex] -= 10
-                    print(dead)
+            
+                    
+            # print(action)
             if 0 not in dead:
-                print("yo")
                 break
             # print("hey")
-            if generationIndex%1 == 0:
-                ENV.render()
+            # if generationIndex%1 == 0:
+            #     ENV.render()
             cflag+=1
         avgScore = np.mean(rewards)
         # experiment.log_metric("fitness", np.mean(avgScore) , step= generationIndex)
+        if avgScore > 0:
+            success+=1
+            if configs.addToVAEdata:
+                img_name = "VAE_img_%s.jpg" % currImageNumber
+                img_loc = "VAE_dataset/images/"+img_name
+                cv2.imwrite(img_loc, trk01_scr)
+                with open(configs.VAE_csvloc, 'a', newline='') as csv_file:
+                    csv_row = [img_name, VAEdataloc]
+                    writer_object = writer(csv_file) 
+                    writer_object.writerow(csv_row) 
+                    csv_file.close()
+            currImageNumber+=1
+            
+        else:
+            failure+=1
 
-        print('Generation', generationIndex,'Complete in ',time.time() - startTime , 'seconds')
+
+        if configs.test == True:
+            print('Generation', generationIndex - configs.checkpoint,'Complete in ',time.time() - startTime , 'seconds')
+        else:
+            print('Generation', generationIndex,'Complete in ',time.time() - startTime , 'seconds')
         print('FITNESS = ', avgScore)
         print('---------------')
-        
+
         if not configs.test:
             temp = [[currentAgents[agentIndex], rewards[agentIndex]] for agentIndex in range(len(currentAgents))]
             currentAgents = sorted(temp, key = lambda ag: ag[1], reverse = True)
@@ -152,7 +183,7 @@ if __name__ == "__main__":
                 saveWeightsAndBiases(nextAgents, generationIndex, configs)
         # else:
         #     env.saveImage()
-
+    print("SUCCESS : ", success, " FAILURE:", failure)
         
             
 
