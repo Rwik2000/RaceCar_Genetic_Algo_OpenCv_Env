@@ -76,7 +76,7 @@ class Args():
         f.write(str(self.getParamsDict()))
         f.close()
 
-        self.addToVAEdata = 1
+        self.addToVAEdata = 0
         self.VAE_csvloc = 'VAE_dataset/VAE_points.csv'
 
     def getParamsDict(self):

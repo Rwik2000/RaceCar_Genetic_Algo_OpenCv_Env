@@ -89,7 +89,7 @@ if __name__ == "__main__":
     success = 0
     failure = 0
     
-    for generationIndex in range(configs.checkpoint, configs.checkpoint + 1000):
+    for generationIndex in range(configs.checkpoint, configs.checkpoint + 10000):
         VAEdataloc = []
         trk01 = ENV.gen_track()
         Cars = ENV.gen_vehicles()
@@ -127,10 +127,12 @@ if __name__ == "__main__":
                     steer = action[agentIndex][1]
                     # print(throttle, steer)
                     vis_pts, carLoc ,dead[agentIndex], reward = ENV.vehicles[agentIndex].move(throttle,steer)
+                    # print(carLoc)
                     rewards[agentIndex] += reward
 
                     if configs.addToVAEdata:
-                        VAEdataloc.append(carLoc)
+                        VAEdataloc.append(carLoc[:])
+
                     state[agentIndex] = vis_pts
                     if rewards[agentIndex] < -5 and dead[agentIndex] ==0:
                         # print("DEAD - Lack of rewards")
@@ -144,8 +146,8 @@ if __name__ == "__main__":
             if 0 not in dead:
                 break
             # print("hey")
-            # if generationIndex%1 == 0:
-            #     ENV.render()
+            if generationIndex%1 == 0:
+                ENV.render()
             cflag+=1
         avgScore = np.mean(rewards)
         # experiment.log_metric("fitness", np.mean(avgScore) , step= generationIndex)
@@ -154,6 +156,7 @@ if __name__ == "__main__":
             if configs.addToVAEdata:
                 img_name = "VAE_img_%s.jpg" % currImageNumber
                 img_loc = "VAE_dataset/images/"+img_name
+                trk01_scr = cv2.circle(trk01_scr, tuple(spawn_loc), 5, (0,0,255),6)
                 cv2.imwrite(img_loc, trk01_scr)
                 with open(configs.VAE_csvloc, 'a', newline='') as csv_file:
                     csv_row = [img_name, VAEdataloc]
