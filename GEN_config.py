@@ -1,3 +1,4 @@
+from numpy.core.shape_base import _arrays_for_stack_dispatcher
 import torch
 import os
 import numpy as np
@@ -7,8 +8,8 @@ class Args():
 
     def __init__(self):
         # Logistical Parameters
-        self.checkpoint = 74
-        trial = 6
+        self.checkpoint = 39
+        trial = 2
         self.test = True
         
         # evolution parameters
@@ -56,9 +57,9 @@ class Args():
 
         # Settings
         self.nSurvivors = 5
-        self.num_vehicles = 100
+        self.num_vehicles = 60
         if self.test:
-            self.num_vehicles = 1
+            self.num_vehicles = 5
             self.nSurvivors = self.num_vehicles
             
         

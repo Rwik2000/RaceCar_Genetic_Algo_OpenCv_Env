@@ -3,6 +3,7 @@
 from time import sleep
 import cv2
 import numpy as np
+from numpy.lib.financial import ipmt
 from numpy.lib.function_base import select
 from GEN_agentFile import Agent
 # from GEN_environment import Car, Environment
@@ -13,6 +14,7 @@ import torch
 import os
 import time
 from csv import writer
+from tqdm import tqdm
 configs, use_cuda,  device = configure()
 
 ## SET LOGGING
@@ -72,7 +74,7 @@ if __name__ == "__main__":
         for spawnIndex in range(configs.num_vehicles):
             agent = Agent(configs, device)
             currentAgents.append(agent)
-    ENV = env(speed_X=70)
+    ENV = env(speed_X=70, dist_to_px=30)
     ENV.num_vehicles = configs.num_vehicles
     ENV._obstaclesON = 0
     # print()
@@ -91,9 +93,10 @@ if __name__ == "__main__":
     
     for generationIndex in range(configs.checkpoint, configs.checkpoint + 10000):
         VAEdataloc = []
+        winner = -1
         trk01 = ENV.gen_track()
         Cars = ENV.gen_vehicles()
-        trk01_scr, spawn_loc = trk01.gen_track()
+        _, trk01_scr, spawn_loc = trk01.gen_track_top()
         print("number of turns : ", trk01._turns)
         cflag = 0
 
@@ -105,15 +108,21 @@ if __name__ == "__main__":
         nextAgents = []
 
         startTime = time.time()
-        thresh_time = 90
+        thresh_time = 180
         # for timestep in range(configs.deathThreshold):
         init_vel = np.random.uniform(0, 40)
         # init_yaw = np.random.uniform(-70,70)
-        while time.time() - startTime <= thresh_time:
+        count = 0
+        carLoc_list = [[]]*len(currentAgents)
+        for _ in tqdm(range(60), total=60):
             input_scr = trk01_scr.copy()
             for agentIndex in range(len(currentAgents)):
+                if count==0:
+                    # print(ENV.vehicles[agentIndex].yaw)
+                    ENV.vehicles[agentIndex].yaw = 0
                 if dead[agentIndex] == 0:
                     action[agentIndex] = currentAgents[agentIndex].chooseAction(state[agentIndex])
+                    # print(action[agentIndex])
                     action[agentIndex][0] = action[agentIndex][0].clip(0.0, 1.0)
                     # print(action[agentIndex])
                     action[agentIndex][1] = action[agentIndex][1].clip(0,1.0)
@@ -123,24 +132,28 @@ if __name__ == "__main__":
                         ENV.vehicles[agentIndex].vel = init_vel
                         # ENV.vehicles[agentIndex].yaw = -np.deg2rad(init_yaw)
 
-                    throttle = action[agentIndex][0]
+                    # throttle = max(0.5, action[agentIndex][0])
+                    throttle = 0.8
+                    action[agentIndex][0] = throttle
                     steer = action[agentIndex][1]
                     # print(throttle, steer)
                     vis_pts, carLoc ,dead[agentIndex], reward = ENV.vehicles[agentIndex].move(throttle,steer)
-                    # print(carLoc)
+                    # print(reward)
                     rewards[agentIndex] += reward
 
                     if configs.addToVAEdata:
-                        VAEdataloc.append(carLoc[:])
+                        carLoc_list[agentIndex].append(carLoc[:])
+                        # VAEdataloc.append(carLoc[:])
 
                     state[agentIndex] = vis_pts
-                    if rewards[agentIndex] < -5 and dead[agentIndex] ==0:
+                    if rewards[agentIndex] < -30 and dead[agentIndex] ==0:
                         # print("DEAD - Lack of rewards")
                         ENV.vehicles[agentIndex].reset()
                         ENV.vehicles[agentIndex].done = -1
                         dead[agentIndex] = -1
-                        rewards[agentIndex] -= 10
-            
+                        rewards[agentIndex] -= 20
+                        
+            count+=1
                     
             # print(action)
             if 0 not in dead:
@@ -150,16 +163,19 @@ if __name__ == "__main__":
                 ENV.render()
             cflag+=1
         avgScore = np.mean(rewards)
-        # experiment.log_metric("fitness", np.mean(avgScore) , step= generationIndex)
-        if avgScore > 0:
+        winner = np.where(rewards == np.amax(rewards))[0]
+        winner = np.random.choice(winner, size = 1, replace=False)[0]
+        # print()
+        if rewards.any() > 0:
             success+=1
             if configs.addToVAEdata:
                 img_name = "VAE_img_%s.jpg" % currImageNumber
                 img_loc = "VAE_dataset/images/"+img_name
-                trk01_scr = cv2.circle(trk01_scr, tuple(spawn_loc), 5, (0,0,255),6)
+               
                 cv2.imwrite(img_loc, trk01_scr)
                 with open(configs.VAE_csvloc, 'a', newline='') as csv_file:
-                    csv_row = [img_name, VAEdataloc]
+                    print("WINNER: ", winner, "REWARD : ", rewards[winner])
+                    csv_row = [img_name, np.round(carLoc_list[winner],decimals=3).tolist(), spawn_loc]
                     writer_object = writer(csv_file) 
                     writer_object.writerow(csv_row) 
                     csv_file.close()
@@ -177,10 +193,12 @@ if __name__ == "__main__":
         print('---------------')
 
         if not configs.test:
+            # print(currentAgents)
+            # print(rewards)
             temp = [[currentAgents[agentIndex], rewards[agentIndex]] for agentIndex in range(len(currentAgents))]
             currentAgents = sorted(temp, key = lambda ag: ag[1], reverse = True)
             nextAgents = currentAgents[:configs.nSurvivors]
-
+            # print(nextAgents)
             currentAgents = mutateWeightsAndBiases(nextAgents, configs)
             if (generationIndex + 1) % 5 == 0:
                 saveWeightsAndBiases(nextAgents, generationIndex, configs)

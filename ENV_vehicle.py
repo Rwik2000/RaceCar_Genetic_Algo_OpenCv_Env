@@ -1,7 +1,7 @@
 # Bicycle model implementation
 from os import SEEK_CUR
 import numpy as np
-import matplotlib.pyplot as plt
+# import matplotlib.pyplot as plt
 class Vehicle():
     def __init__(self, mass = 1000, mu = 0.5, vel = 1,acc = 0,max_acc = 10 ,max_vel = 40,
                 g=9.8, loc = [0.0,0.0], dist_to_px = 20, track=None, speed_X=1):
@@ -80,12 +80,17 @@ class Vehicle():
                 dist = np.linalg.norm((self.pt_1-self.pt_2))
                 if dist >= self.max_vis:
                     break
-                self.pt_2 = np.array([max(min(self.pt_1[0] + np.cos(angle - self.yaw)*count,w-1), 0), 
-                                      max(self.pt_1[1] - np.sin(angle - self.yaw)*count, 0)])
+                # self.pt_2 = np.array([max(min(self.pt_1[0] + np.cos(angle - self.yaw)*count,w-1), 0), 
+                #                       max(self.pt_1[1] - np.sin(angle - self.yaw)*count, 0)])
+                self.pt_2 = np.array([self.pt_1[0] + np.cos(angle - self.yaw)*count, 
+                                      self.pt_1[1] - np.sin(angle - self.yaw)*count])
                 self.pt_2 = self.pt_2.astype(int)
                 
-                if (self.track[self.pt_2[1]][self.pt_2[0]] == np.array([0,0,0])).all() or self.pt_2[1]==0:
-                    break
+                try:
+                    if (self.track[self.pt_2[1]][self.pt_2[0]] == np.array([0,0,0])).all():
+                        break
+                except:
+                    pass
                 count+=1
             self.vis_pts.append(round(dist/self.dist_to_px, 2))
             self._vis_pts.append(self.pt_2)
@@ -98,7 +103,11 @@ class Vehicle():
         return (steer*np.pi/2)
     
     def move(self, throttle, _steer):
-        steer = (_steer - 0.5)*2
+        steer = _steer*2 - 1
+        # if steer< 0:
+        #     print("left")
+        # else:
+        #     print("right")
         # print(steer)
         self.time += self.dt*self.speed_X
         vel_x = self.vel*np.sin(self.yaw + self.course_angle)
@@ -118,8 +127,9 @@ class Vehicle():
         self.yaw += self.yaw_rate*self.dt
         if abs(self.yaw)>np.pi*2:
             self.yaw -= np.pi*2
-        self.prev_loc = self.loc
-        self.prev_yaw = self.yaw
+
+        self.prev_loc = self.loc.copy()
+        self.prev_yaw = self.yaw.copy()
         self.loc[1] -= vel_y*self.dt*self.dist_to_px 
         self.loc[0] += vel_x*self.dt*self.dist_to_px
 
@@ -127,7 +137,7 @@ class Vehicle():
         self.get_vision_points()
         self.done =  0
         try:
-            if(self.loc[1] <= 50 ):
+            if(self.loc[1] <= 10 or self.loc[0] <= 5 or self.loc[0] >= 800 - 5 ):
                 self.done = 1
             elif (self.track[int(self.loc[1])][int(self.loc[0])] == np.array([0,0,0])).all():
                 self.reset()
@@ -143,14 +153,16 @@ class Vehicle():
     def get_reward(self):
         self.reward = 0
         if self.done == 1:
-            self.reward += 20
+            self.reward += 100
         else:
             if self.done == -1:
-                self.reward -=10
-            # print("yo")
-            self.reward -= 0.1
-            self.reward -= (self.loc[1] - self.prev_loc[1])*30
-            self.reward -= abs(self.yaw - self.prev_yaw)*10
+                self.reward -=40
+
+            #time-wasting
+            # self.reward -= 0.5
+            self.reward -= (self.loc[1] - self.prev_loc[1])*200
+            self.reward += -abs(self.yaw - self.prev_yaw)*500
+            
 
         # print(self.reward)
         return round(self.reward,2)

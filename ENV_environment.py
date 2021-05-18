@@ -44,10 +44,13 @@ class env():
         yellow = (0,255,255)
         red = (0,0,255)
         blue = (255,0,0)
+        green = (0,255,0)
         cv2.line(img, pt1, pt2, (0, 0, 255), 2) #Car front
         carColor = yellow
-        if status !=0:
+        if status ==-1:
             carColor = blue
+        if status ==1:
+            carColor = green
         cv2.line(img, pt0, pt1, carColor, 2)
         cv2.line(img, pt2, pt3, carColor, 2)
         cv2.line(img, pt3, pt0, carColor, 2)
