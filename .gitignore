@@ -1,0 +1,9 @@
+
+.vscode/settings.json
+__pycache__/ENV_environment.cpython-36.pyc
+__pycache__/ENV_track.cpython-36.pyc
+__pycache__/ENV_vehicle.cpython-36.pyc
+__pycache__/GEN_agentFile.cpython-36.pyc
+__pycache__/GEN_config.cpython-36.pyc
+__pycache__/GEN_neuralnet.cpython-36.pyc
+*.pyc

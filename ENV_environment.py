@@ -12,6 +12,7 @@ class env():
         self.vehicles = []
         self._obstaclesON = 0
         self.num_vehicles = 1
+        self.trk = Track(self.dist_to_px)
 
     def gen_vehicles(self, vel = 0, acc = 0, yaw = 0):
         for i in range(self.num_vehicles):
@@ -23,7 +24,6 @@ class env():
         return self.vehicles
     
     def gen_track(self):
-        self.trk = Track(self.dist_to_px)
         self.trk.dist_to_px = self.dist_to_px
         self.trk.obstaclesON = self._obstaclesON
         return self.trk
@@ -68,7 +68,8 @@ class env():
             cv2.circle(self.track,(int(vehicle.loc[0]),int(vehicle.loc[1])), 4, (0,255,255),3)    
             self.track = self.drawCar(int(vehicle.loc[0]), int(vehicle.loc[1]), 20, 40, vehicle.yaw, self.track, vehicle.done)
         cv2.imshow("xyz",self.track)
-        cv2.waitKey(1)
+        if cv2.waitKey(1) == ord('q'):
+            exit()
     
     
     

@@ -21,27 +21,82 @@ class Track():
         # Car params
         self.car_front_clearance = 0*self.dist_to_px #5 stands for meter, self.dist_to_px is conversion to pixel space
 
-    
+        self.indexes = {
+            'horiz' : 0, # 0  to scrwidth
+            'verti' : 150 # 50 to scrheight - 50
+        }
+        self.index =0
     # points based on which bezier plot will be made
+
+
+    # bezier + offset 
     def _gen_bnd_pts(self):
-        left_bot_pt = np.array([np.random.randint(0, self.scr_width - self.trk_width_px), self.scr_height-self.car_front_clearance])
-        right_bot_pt = np.array([left_bot_pt[0]+self.trk_width_px, self.scr_height- self.car_front_clearance])
+        self.index += 1
+        if self.index % 300 == 0:
+            self.indexes = {
+                'horiz' : (self.indexes['horiz']  +  20) % 300, # 0  to scrwidth
+                'verti' : self.indexes['verti'] # 50 to scrheight - 50
+            }
+        else:
 
-        left_top_pt = np.array([np.random.randint(-300, self.scr_width+300), 0])
-        right_top_pt = np.array([left_top_pt[0]+self.trk_width_px, 0 ])
+            self.indexes = {
+                'horiz' : self.indexes['horiz'], # 0  to scrwidth
+                'verti' : (self.indexes['verti'] + 20) % 500 # 50 to scrheight - 50
+            }
 
-        turns = random.choice(self.turns)
-        self._turns = turns
-        left_pts = [left_bot_pt]
-        right_pts = [right_bot_pt]
-        for i in range(turns):
-            left_mid_pt = np.array([np.random.randint(0, self.scr_width - self.trk_width_px), (left_top_pt[1]*(i+1)+left_bot_pt[1])//turns - np.random.randint(100,300)])
-            left_pts.append(left_mid_pt)
-            right_mid_pt = np.array([left_mid_pt[0]+self.trk_width_px, (left_top_pt[1]*(i+1)+left_bot_pt[1])//turns - np.random.randint(100,300)])
-            right_pts.append(right_mid_pt)
-        left_pts.append(left_top_pt)
-        right_pts.append(right_top_pt)
-        return left_pts, right_pts
+        turn = True
+        
+        bottomx = self.scr_width // 2
+        topx = self.indexes['horiz']
+        bottomy = self.scr_height- self.car_front_clearance
+        topy = 0
+        halfwidth  =self.trk_width_px//2
+
+        leftPoints = [
+            np.array([bottomx - halfwidth, bottomy]),
+        ]
+
+        rightPoints = [
+            np.array([bottomx + halfwidth, bottomy]),
+        ]
+
+
+        if turn:
+            midx = (bottomx + topx) // 2
+            midy = self.indexes['verti']
+            leftPoints.append(np.array([midx - halfwidth, midy]))
+            rightPoints.append(np.array([midx + halfwidth, midy]))
+
+        leftPoints.append(np.array([topx - halfwidth, topy]))
+        rightPoints.append(np.array([topx + halfwidth, topy]))
+
+
+        return leftPoints, rightPoints
+
+
+
+
+#     def _gen_bnd_pts(self):
+
+#         left_bot_pt = np.array([(self.scr_width - self.trk_width_px)//2, self.scr_height-self.car_front_clearance])
+#         right_bot_pt = np.array([(self.scr_width + self.trk_width_px)//2, self.scr_height- self.car_front_clearance])
+
+# # -300, self.scr_width+300
+#         left_top_pt = np.array([int(np.random.randn()*(self.scr_width + 600)/2), 0])
+#         right_top_pt = np.array([left_top_pt[0]+self.trk_width_px, 0 ])
+
+#         turns = random.choice(self.turns)
+#         self._turns = turns
+#         left_pts = [left_bot_pt]
+#         right_pts = [right_bot_pt]
+#         for i in range(turns):
+#             left_mid_pt = np.array([np.random.randint(0, self.scr_width - self.trk_width_px), (left_top_pt[1]*(i+1)+left_bot_pt[1])//turns - np.random.randint(100,300)])
+#             left_pts.append(left_mid_pt)
+#             right_mid_pt = np.array([left_mid_pt[0]+self.trk_width_px, (left_top_pt[1]*(i+1)+left_bot_pt[1])//turns - np.random.randint(100,300)])
+#             right_pts.append(right_mid_pt)
+#         left_pts.append(left_top_pt)
+#         right_pts.append(right_top_pt)
+#         return left_pts, right_pts
 
     # drawing the bezier trajectory
     def _find_bez_traj(self, coordinates, points):

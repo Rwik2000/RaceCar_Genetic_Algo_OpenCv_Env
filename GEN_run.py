@@ -114,7 +114,7 @@ if __name__ == "__main__":
         # init_yaw = np.random.uniform(-70,70)
         count = 0
         carLoc_list = [[]]*len(currentAgents)
-        for _ in tqdm(range(60), total=60):
+        for timeindex in tqdm(range(60), total=60):
             input_scr = trk01_scr.copy()
             for agentIndex in range(len(currentAgents)):
                 if count==0:
@@ -159,7 +159,7 @@ if __name__ == "__main__":
             if 0 not in dead:
                 break
             # print("hey")
-            if generationIndex%1 == 0:
+            if generationIndex%1 == 0 and timeindex % 10 == 0:
                 ENV.render()
             cflag+=1
         avgScore = np.mean(rewards)
